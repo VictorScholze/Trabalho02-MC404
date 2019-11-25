@@ -37,35 +37,69 @@ read_ultrassonic_sensor:
         lw a0, 0(a7)
         li t1, 1
         bne t1, a0, looplocal # if t1 != a0 then looplocal
-        lw a7, 0xFFFF0024 # 
-        sw a0, 0(a7) #
-        ret
+    lw a7, 0xFFFF0024 # 
+    lw a0, 0(a7) #
+    ret
         
 set_servo_angles:
-    li t1, 1 # t1 = 1
-    li t2, 2 # t2 = 2
-    li t3, 3 # t3 = 3
-    beq t3, a0, setservo3; # if t1 == a0 then setservo3
-    beq t2, a0, setservo2; # if t2 == a0 then setservo2
-    beq t1, a0, setservo1; # if t1 == a0 then setservo1
+    li t1, 1 # t1 = 0
+    li t2, 2 # t2 = 1
+    li t3, 3 # t3 = 2
+    beq t1, a0, setservo0; # if t1 == a0 then setservo0
+    beq t2, a0, setservo1; # if t2 == a0 then setservo1
+    beq t3, a0, setservo2; # if t1 == a0 then setservo2
     blt a0, t1, wrongid # if a0 < t1 then wrongid
     bgt a0, t3, wrongid # if a0 > t3 then wrongid
-    setservo3:
-        lw t1, 0 # 
-        lw t2, 156 # 
-        blt a1, t1, outrange3 # if a1 < t1 then outrange3
-        bgt a1, t2, outrange3 # if a1 > t2 then outrange3
 
-        outrange3:
-            li a0, -1  # a0 = -1
-            ret
-    setservo2:
+    setservo0: #base servo
+        li t1, 0 # t1 = 16
+        li t2, 156 # t2 = 116
+        blt a1, t1, outrange # if a1 < t1 then outrange
+        bgt a1, t2, outrange # if a1 > t2 then outrange
+        la a0, 0xFFFF001E # 
+        sw a1, 0(a0) # 
 
-    setservo1:
+    setservo1: #mid servo
+        li t1, 0 # t1 = 52
+        li t2, 156 # t2 = 90
+        blt a1, t1, outrange # if a1 < t1 then outrange
+        bgt a1, t2, outrange # if a1 > t2 then outrange
+        la a0, 0xFFFF001D # 
+        sw a1, 0(a0) # 
+
+    setservo2: #top servo
+        li t1, 0 # t1 = 0
+        li t2, 156 # t2 = 156
+        blt a1, t1, outrange # if a1 < t1 then outrange
+        bgt a1, t2, outrange # if a1 > t2 then outrange
+        la a0, 0xFFFF001C # 
+        sw a1, 0(a0) # 
+        # descobrir com acabar aqui########################
 
     wrongid:
         li a0, -2 # a0 = -2
-        ret a0
-
     
-#0xFFFF001C	3 top 0 156   0xFFFF001D 2 mid 52 90    0xFFFF001E 1 base 16 116
+    outrange:
+        li a0, -1  # a0 = -1
+
+set_engine_torque:
+    li t0, -1 # a0 = -1
+    li t1, 1 # t1 = 1
+    
+    beq a0, zero, seteng0; # if a0 == zero then seteng0
+    beq a0, t1, seteng1; # if a0 == t1 then seteng1
+    
+    seteng0:
+        
+    seteng1:
+
+
+read_gps:
+
+read_gyroscope:
+
+get_time:
+
+set_time:
+
+write:
