@@ -1,5 +1,6 @@
 #tratador de interrupcoes
 #salva contexto
+.globl _start
 int_handler:
     csrrw a0, mscratch, a0 # troca valor de a0 com mscratch
     sw a1, 0(a0) # salva a1
@@ -35,8 +36,8 @@ int_handler:
     csrrw a0, mscratch, a0 # troca valor de a0 com mscratch
 
 #verificar mcause
-    csrr a1, mcause # lê a causa da exceção
-    bgez a1, escolhe_syscall # desvia se não for uma interrupção
+    csrr s10, mcause # lê a causa da exceção
+    bgez s10, escolhe_syscall # desvia se não for uma interrupção
 
     li t1, 0xFFFF0100 # t1 = 0xFFFF0100 guarda valor para gerar interrupcao
     li t2, 0xFFFF0104 # t2 = 0xFFFF0104 1-ha interrupcao/0-n ha interrupcao
@@ -47,7 +48,7 @@ trata_gpt:
     lw t4, 0(t3)
     addi t4, t4, 100; # t4 = t4 + 100
     sw t4, 0(t3) # 
-    sw zero, 0(t2) # 
+    sb zero, 0(t2) # 
     li t5, 100 # t5 = 100
     sw t5, 0(t1) # 
     j restaura_contexto
@@ -82,14 +83,14 @@ escolhe_syscall:
 #implementacao syscall 
 #le sensor ultrassonico
 read_ultrassonic_sensor:
-    lw a7, 0xFFFF0020
-    lw a0, 0
+    li a7, 0xFFFF0020
+    li a0, 0
     sw a0, 0(a7)
     looplocal:
         lw a0, 0(a7)
         li t1, 1
         bne t1, a0, looplocal # if t1 != a0 then looplocal
-    lw a7, 0xFFFF0024 # 
+    li a7, 0xFFFF0024 # 
     lw a0, 0(a7) #
     j restaura_contexto
 
@@ -110,7 +111,8 @@ set_servo_angles:
         blt a1, t1, outrange # if a1 < t1 then outrange
         bgt a1, t2, outrange # if a1 > t2 then outrange
         li a0, 0xFFFF001E # 
-        sw a1, 0(a0) # 
+        sb a1, 0(a0) # 
+        li a0, 0 # a0 = 0
         j restaura_contexto
 
     setservo1: #mid servo
@@ -119,7 +121,8 @@ set_servo_angles:
         blt a1, t1, outrange # if a1 < t1 then outrange
         bgt a1, t2, outrange # if a1 > t2 then outrange
         li a0, 0xFFFF001D # 
-        sw a1, 0(a0) # 
+        sb a1, 0(a0) # 
+        li a0, 0 # a0 = 0
         j restaura_contexto
 
     setservo2: #top servo
@@ -128,7 +131,8 @@ set_servo_angles:
         blt a1, t1, outrange # if a1 < t1 then outrange
         bgt a1, t2, outrange # if a1 > t2 then outrange
         li a0, 0xFFFF001C # 
-        sw a1, 0(a0) # 
+        sb a1, 0(a0) # 
+        li a0, 0 # a0 = 0
         j restaura_contexto
 
     wrongid:
@@ -152,13 +156,13 @@ set_engine_torque:
     seteng0:
         li a0, 0 # a0 = 0
         li t1, 0xFFFF001A # 
-        sw a1, 0(t1) # 
+        sh  a1, 0(t1) # 
         j restaura_contexto
 
     seteng1:
         li a0, 0 # a0 = 0
         li t1, 0xFFFF0018 # 
-        sw a1, 0(t1) # 
+        sh a1, 0(t1) # 
         j restaura_contexto
 
 #le gps
@@ -229,10 +233,10 @@ write:
     li t3, 1 # t3 = 1
     li t4, 0 # t4 = 0 contador
     
-    incia:
+    inicia:
         lb s1, 0(a1) # carrega valor em s1
         sb s1, 0(t1) # coloca valor no endereco de transmissao
-        sw t3, 0(t2) # inicia transmissao
+        sb t3, 0(t2) # inicia transmissao
         addi t4, t4, 1; # t4 = t4 + 1
     
     transmite:
@@ -281,30 +285,34 @@ restaura_contexto:
     lw a2, 4(a0) # 
     lw a1, 0(a0) # 
     csrrw a0, mscratch, a0 # troca valor de a0 com mscratch
+    csrr a1, mepc 
+    addi a1, a1, 4
+    csrw mepc, a1
     mret
 
 
-.globl _start
 _start:
     # Setta os valores iniciais do uoli
     # Torque zero nos motores
     li t1, 0xFFFF001A # t1 = 0xFFFF001A endereco do torque motor 1
     li t2, 0xFFFF0018 # t2 = 0xFFFF0018 endereco do torque motor 2
-    sw zero, 0(t1) # 
-    sw zero, 0(t2) # 
+    sh zero, 0(t1) # 
+    sh zero, 0(t2) # 
+
     # Angulo dos servos
     #top
     li t3, 0xFFFF001C # t3 = 0xFFFF001C endereco do top servo
     li t1, 78 # t1 = 78
-    sw t1, 0(t3) # 
+    sb t1, 0(t3) # 
     #mid
     li t4, 0xFFFF001D # t4 = 0xFFFF001D endereco do mid servo
     li t2, 80 # t2 = 80
-    sw t2, 0(t4) # 
+    sb t2, 0(t4) # 
     #base
     li t5, 0xFFFF001E # t5 = 0xFFFF001E endereco do base servo
     li t6, 31 # t6 = 31
-    sw t6, 0(t5) # 
+    sb t6, 0(t5) # 
+    
     # Configura o gpt
     la t4, tempo # 
     sw zero, 0(t4) # 
@@ -313,21 +321,26 @@ _start:
     sw t2, 0(t1) # guarda 100 no t1
     li t3, 0xFFFF0104 # t3 = 0xFFFF0104
     sw zero, 0(t3) # zera o registrador q indica uma interrupcao
+    
     # Configura o tratador de interrupções
     la t0, int_handler # Grava o endereço do rótulo int_handler
     csrw mtvec, t0 # no registrador mtvec
+    
     # Habilita Interrupções Global
     csrr t1, mstatus # Seta o bit 7 (MPIE)
     ori t1, t1, 0x80 # do registrador mstatus
     csrw mstatus, t1
+    
     # Habilita Interrupções Externas
     csrr t1, mie # Seta o bit 11 (MEIE)
     li t2, 0x800 # do registrador mie
     or t1, t1, t2
     csrw mie, t1
+    
     # Ajusta o mscratch
     la t1, reg_buffer # Coloca o endereço do buffer para salvar
     csrw mscratch, t1 # registradores em mscratch
+    
     # Muda para o Modo de usuário
     csrr t1, mstatus # Seta os bits 11 e 12 (MPP)
     li t2, ~0x1800 # do registrador mstatus
@@ -340,3 +353,12 @@ _start:
 tempo: .skip 4
 .align 4
 
+reg_buffer:
+    .skip 5000
+    .word 0
+
+user:
+    call main
+
+laco:
+    j laco
