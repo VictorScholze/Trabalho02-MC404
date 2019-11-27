@@ -2,9 +2,9 @@
 
 int main(){
 
-	set_torque(100, 100);
+	set_torque(20, 20);
 	
-	while(1) { }
+	while(1) { ;}
 
-	return 0;
+	
 }
