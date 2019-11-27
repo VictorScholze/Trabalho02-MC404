@@ -32,9 +32,28 @@ int_handler:
     sw sp, 108(a0) # 
     sw gp, 112(a0) # 
     sw tp, 116(a0) # 
+    csrrw a0, mscratch, a0 # troca valor de a0 com mscratch
 
+#verificar mcause
+    csrr a1, mcause # lê a causa da exceção
+    bgez a1, escolhe_syscall # desvia se não for uma interrupção
+
+    li t1, 0xFFFF0100 # t1 = 0xFFFF0100 guarda valor para gerar interrupcao
+    li t2, 0xFFFF0104 # t2 = 0xFFFF0104 1-ha interrupcao/0-n ha interrupcao
+    bnez t2, trata_gpt
+    j restaura_contexto
+trata_gpt:
+    la t3, tempo # 
+    lw t4, 0(t3)
+    addi t4, t4, 100; # t4 = t4 + 100
+    sw t4, 0(t3) # 
+    sw zero, 0(t2) # 
+    li t5, 100 # t5 = 100
+    sw t5, 0(t1) # 
+    j restaura_contexto
+    
 #escolhe_syscall
-
+escolhe_syscall:
     li t1, 16 # t1 = 16
     beq a7, t1, read_ultrassonic_sensor; # if a7 == t1 then read_ultrassonic_sensor
 
@@ -60,8 +79,8 @@ int_handler:
     beq a7, t1, write; # if a7 == t1 then write
     
 
-#implementacao syscall ###########################################fazer o final dos rotulos########################
-
+#implementacao syscall 
+#le sensor ultrassonico
 read_ultrassonic_sensor:
     lw a7, 0xFFFF0020
     lw a0, 0
@@ -72,8 +91,9 @@ read_ultrassonic_sensor:
         bne t1, a0, looplocal # if t1 != a0 then looplocal
     lw a7, 0xFFFF0024 # 
     lw a0, 0(a7) #
+    j restaura_contexto
 
-        
+#seta os angulos do servo #######################################################checar se deixo a verificacao aqui ou nao
 set_servo_angles:
     li t1, 1 # t1 = 0
     li t2, 2 # t2 = 1
@@ -89,32 +109,37 @@ set_servo_angles:
         li t2, 156 # t2 = 116
         blt a1, t1, outrange # if a1 < t1 then outrange
         bgt a1, t2, outrange # if a1 > t2 then outrange
-        la a0, 0xFFFF001E # 
+        li a0, 0xFFFF001E # 
         sw a1, 0(a0) # 
+        j restaura_contexto
 
     setservo1: #mid servo
         li t1, 0 # t1 = 52
         li t2, 156 # t2 = 90
         blt a1, t1, outrange # if a1 < t1 then outrange
         bgt a1, t2, outrange # if a1 > t2 then outrange
-        la a0, 0xFFFF001D # 
+        li a0, 0xFFFF001D # 
         sw a1, 0(a0) # 
+        j restaura_contexto
 
     setservo2: #top servo
         li t1, 0 # t1 = 0
         li t2, 156 # t2 = 156
         blt a1, t1, outrange # if a1 < t1 then outrange
         bgt a1, t2, outrange # if a1 > t2 then outrange
-        la a0, 0xFFFF001C # 
+        li a0, 0xFFFF001C # 
         sw a1, 0(a0) # 
-        ############ como terminar
+        j restaura_contexto
 
     wrongid:
         li a0, -2 # a0 = -2
+        j restaura_contexto
     
     outrange:
         li a0, -1  # a0 = -1
+        j restaura_contexto
 
+#seta torque dos motores
 set_engine_torque:
     li t0, -1 # a0 = -1
     li t1, 1 # t1 = 1
@@ -122,32 +147,109 @@ set_engine_torque:
     beq a0, zero, seteng0; # if a0 == zero then seteng0
     beq a0, t1, seteng1; # if a0 == t1 then seteng1
     li a0, -1 # a0 = -1
-    ####### da r um jump pra algum canto
+    j restaura_contexto
 
     seteng0:
         li a0, 0 # a0 = 0
-        la t1, 0xFFFF001A # 
+        li t1, 0xFFFF001A # 
         sw a1, 0(t1) # 
-        #######finalizar com jump
+        j restaura_contexto
+
     seteng1:
         li a0, 0 # a0 = 0
-        la t1, 0xFFFF0018 # 
+        li t1, 0xFFFF0018 # 
         sw a1, 0(t1) # 
-        #######finalizar com jump
+        j restaura_contexto
 
+#le gps
 read_gps:
+    li t1, 0xFFFF0004 # 
+    sw zero, 0(t1) # atribui 0 para iniciar leitura do gps
+    
+    loopgps:
+        lw t2, 0(t1) #
+        li t3, 1 # t3 = 1
+        beq t2, t3, gpslido; # if t2 == t3 then gpslido
+        j loopgps  # jump to loopgps
 
+    gpslido:
+        li s1, 0xFFFF0008 # t1 = 0xFFFF0008 valor do x
+        lw t1, 0(s1) # 
+        sw t1, 0(a0) # 
+        li s2, 0xFFFF000C # t2 = 0xFFFF000C valor do y
+        lw t2, 0(s2) #
+        sw t2, 4(a0) # 
+        li s3, 0xFFFF0010 # t3 = 0xFFFF0010 valor do z
+        lw t3, 0(s3) # 
+        sw t3, 8(a0) # 
+        j restaura_contexto
+
+#le giroscopio
 read_gyroscope:
+    li t1, 0xFFFF0004 # 
+    sw zero, 0(t1) # atribui 0 para iniciar leitura do giroscopio
 
+    loopgyro:
+        lw t2, 0(t1) #
+        li t3, 1 # t3 = 1
+        beq t2, t3, gyrolido; # if t2 == t3 then gyrolido
+        j loopgyro  # jump to loopgyro
+
+    gyrolido:
+        li s3, 0xFFFF0014 # s3 = 0xFFFF0014
+        andi t3, s3, 1023 #t3 tem valor de z
+
+        srli s2, s3, 10
+        andi t2, s2, 1023 #t2 tem valor do y
+
+        srli s1, s2, 10
+        andi t1, s1, 1023 #t1 tem valor do x
+
+        sw t1, 0(a0) # 
+        sw t2, 4(a0) # 
+        sw t3, 8(a0) # 
+        j restaura_contexto
+        
+#pega o tempo
 get_time:
+    la t1, tempo
+    lw a0, 0(t1)
+    j restaura_contexto
 
+#seta o tempo
 set_time:
-
+    la t1, tempo
+    sw a0, 0(t1) # 
+    j restaura_contexto
+    
+#escreve na UART
 write:
+    li t1, 0xFFFF0109 # t1 = 0xFFFF0109 valor a ser transmitido pela UART
+    li t2, 0xFFFF0108 # t2 = 0xFFFF0108 registrador que inicia transmissao
+    li t3, 1 # t3 = 1
+    li t4, 0 # t4 = 0 contador
+    
+    incia:
+        lb s1, 0(a1) # carrega valor em s1
+        sb s1, 0(t1) # coloca valor no endereco de transmissao
+        sw t3, 0(t2) # inicia transmissao
+        addi t4, t4, 1; # t4 = t4 + 1
+    
+    transmite:
+        bnez t2, transmite #enquanto t2 != 0 transmite
+    
+    beq t4, a2, fim_transmissao; # if t4 == a2 then fim_transmissao
+    addi a1, a1, 1; # a1 = a1 + 1
+    j inicia
 
+    fim_transmissao:
+        mv  a0, t4 # a0 = t4
+        j restaura_contexto
+        
 
 restaura_contexto:
-
+    
+    csrrw a0, mscratch, a0 # troca valor de a0 com mscratch
     lw tp, 116(a0) # 
     lw gp, 112(a0) #
     lw sp, 108(a0) # 
@@ -178,13 +280,39 @@ restaura_contexto:
     lw a3, 8(a0) # 
     lw a2, 4(a0) # 
     lw a1, 0(a0) # 
-
     csrrw a0, mscratch, a0 # troca valor de a0 com mscratch
-
+    mret
 
 
 .globl _start
 _start:
+    # Setta os valores iniciais do uoli
+    # Torque zero nos motores
+    li t1, 0xFFFF001A # t1 = 0xFFFF001A endereco do torque motor 1
+    li t2, 0xFFFF0018 # t2 = 0xFFFF0018 endereco do torque motor 2
+    sw zero, 0(t1) # 
+    sw zero, 0(t2) # 
+    # Angulo dos servos
+    #top
+    li t3, 0xFFFF001C # t3 = 0xFFFF001C endereco do top servo
+    li t1, 78 # t1 = 78
+    sw t1, 0(t3) # 
+    #mid
+    li t4, 0xFFFF001D # t4 = 0xFFFF001D endereco do mid servo
+    li t2, 80 # t2 = 80
+    sw t2, 0(t4) # 
+    #base
+    li t5, 0xFFFF001E # t5 = 0xFFFF001E endereco do base servo
+    li t6, 31 # t6 = 31
+    sw t6, 0(t5) # 
+    # Configura o gpt
+    la t4, tempo # 
+    sw zero, 0(t4) # 
+    li t1, 0xFFFF0100 # t1 = 0xFFFF0100 guarda valor para gerar interrupcao
+    li t2, 100 # t2 = 100
+    sw t2, 0(t1) # guarda 100 no t1
+    li t3, 0xFFFF0104 # t3 = 0xFFFF0104
+    sw zero, 0(t3) # zera o registrador q indica uma interrupcao
     # Configura o tratador de interrupções
     la t0, int_handler # Grava o endereço do rótulo int_handler
     csrw mtvec, t0 # no registrador mtvec
@@ -208,5 +336,7 @@ _start:
     la t0, user # Grava o endereço do rótulo user
     csrw mepc, t0 # no registrador mepc
     mret # PC <= MEPC; MIE <= MPIE; Muda modo para MPP
+
+tempo: .skip 4
 .align 4
 
