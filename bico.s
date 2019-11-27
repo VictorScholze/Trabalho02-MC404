@@ -19,7 +19,7 @@ set_torque:
     li a0, 1 #coloca o id do motor 2 que é 1 no a0
     li a7, 18 # coloca o código 18 da syscall set_engine_torque 
     ecall #chamada do sistema
-    mv a0, 0 # coloca id do motor 1 que é 0 no a0
+    li a0, 0 # coloca id do motor 1 que é 0 no a0
     mv a1, a5 #coloca o valor do torque do motor 1 que estava em a5 no a1
     ecall
     ret
@@ -33,7 +33,7 @@ set_engine_torque:
     li a3, -100
     li a4, 1
     blt a2, a1, torque_invalido #se o valor do torque 2 for maior que 100
-    blt a1, a3, torque _invalido # se o valor do torque 2 for menor que -100
+    blt a1, a3, torque_invalido # se o valor do torque 2 for menor que -100
     beqz a0, valido #se nao for igual a 0 vai pro codigo
     beq a0, a4, valido # se for igual a 1 vai pro codigo
     li a0, -2 # se o valor do id for invalido retorna -2 no a0
