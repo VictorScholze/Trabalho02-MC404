@@ -2,38 +2,39 @@
 #salva contexto
 .globl _start
 int_handler:
-    csrrw a0, mscratch, a0 # troca valor de a0 com mscratch
-    sw a1, 0(a0) # salva a1
-    sw a2, 4(a0) # salva a2
-    sw a3, 8(a0) # salva a3
-    sw a4, 12(a0) # salva a4
-    sw a5, 16(a0) # 
-    sw a6, 20(a0) # 
-    sw a7, 24(a0) # 
-    sw s0, 28(a0) # 
-    sw s1, 32(a0) # 
-    sw s2, 36(a0) # 
-    sw s3, 40(a0) # 
-    sw s4, 44(a0) # 
-    sw s5, 48(a0) # 
-    sw s6, 52(a0) # 
-    sw s7, 56(a0) # 
-    sw s8, 60(a0) # 
-    sw s9, 64(a0) # 
-    sw s10, 68(a0) # 
-    sw s11, 72(a0) # 
-    sw t0, 76(a0) # 
-    sw t1, 80(a0) # 
-    sw t2, 84(a0) # 
-    sw t3, 88(a0) # 
-    sw t4, 92(a0) # 
-    sw t5, 96(a0) # 
-    sw t6, 100(a0) # 
-    sw ra, 104(a0) # 
-    sw sp, 108(a0) # 
-    sw gp, 112(a0) # 
-    sw tp, 116(a0) # 
-    csrrw a0, mscratch, a0 # troca valor de a0 com mscratch
+    csrrw s9, mscratch, s9 # troca valor de a0 com mscratch
+    addi s9, s9, 120
+    sw a1, 0(s9) # salva a1
+    sw a2, 4(s9) # salva a2
+    sw a3, 8(s9) # salva a3
+    sw a4, 12(s9) # salva a4
+    sw a5, 16(s9) # 
+    sw a6, 20(s9) # 
+    sw a7, 24(s9) # 
+    sw s0, 28(s9) # 
+    sw s1, 32(s9) # 
+    sw s2, 36(s9) # 
+    sw s3, 40(s9) # 
+    sw s4, 44(s9) # 
+    sw s5, 48(s9) # 
+    sw s6, 52(s9) # 
+    sw s7, 56(s9) # 
+    sw s8, 60(s9) # 
+    sw a0, 64(s9) # 
+    sw s10, 68(s9) # 
+    sw s11, 72(s9) # 
+    sw t0, 76(s9) # 
+    sw t1, 80(s9) # 
+    sw t2, 84(s9) # 
+    sw t3, 88(s9) # 
+    sw t4, 92(s9) # 
+    sw t5, 96(s9) # 
+    sw t6, 100(s9) # 
+    sw ra, 104(s9) # 
+    sw sp, 108(s9) # 
+    sw gp, 112(s9) # 
+    sw tp, 116(s9) # 
+    csrrw s9, mscratch, s9 # troca valor de a0 com mscratch
 
 #verificar mcause
     csrr s10, mcause # lê a causa da exceção
@@ -41,43 +42,45 @@ int_handler:
 
     li t1, 0xFFFF0100 # t1 = 0xFFFF0100 guarda valor para gerar interrupcao
     li t2, 0xFFFF0104 # t2 = 0xFFFF0104 1-ha interrupcao/0-n ha interrupcao
-    bnez t2, trata_gpt
+    lb t6, 0(t2)
+    bnez t6, trata_gpt
     j restaura_contexto
+
 trata_gpt:
     la t3, tempo # 
     lw t4, 0(t3)
-    addi t4, t4, 100; # t4 = t4 + 100
+    addi t4, t4, 100  # t4 = t4 + 100
     sw t4, 0(t3) # 
     sb zero, 0(t2) # 
     li t5, 100 # t5 = 100
     sw t5, 0(t1) # 
-    j restaura_contexto
+    j restaura_contexto_gpt
     
 #escolhe_syscall
 escolhe_syscall:
     li t1, 16 # t1 = 16
-    beq a7, t1, read_ultrassonic_sensor; # if a7 == t1 then read_ultrassonic_sensor
+    beq a7, t1, read_ultrassonic_sensor # if a7 == t1 then read_ultrassonic_sensor
 
     li t1, 17 # t1 = 17
-    beq a7, t1, set_servo_angles; # if a7 == t1 then set_servo_angles
+    beq a7, t1, set_servo_angles # if a7 == t1 then set_servo_angles
     
     li t1, 18 # t1 = 18
-    beq a7, t1, set_engine_torque; # if a7 == t1 then set_engine_torque
+    beq a7, t1, set_engine_torque # if a7 == t1 then set_engine_torque
     
     li t1, 19 # t1 = 19
-    beq a7, t1, read_gps; # if a7 == t1 then read_gps
+    beq a7, t1, read_gps # if a7 == t1 then read_gps
     
     li t1, 20 # t1 = 20
-    beq a7, t1, read_gyroscope; # if a7 == t1 then read_gyroscope
+    beq a7, t1, read_gyroscope # if a7 == t1 then read_gyroscope
     
     li t1, 21 # t1 = 21
-    beq a7, t1, get_time; # if a7 == t1 then get_time
+    beq a7, t1, get_time # if a7 == t1 then get_time
     
     li t1, 22 # t1 = 22
-    beq a7, t1, set_time; # if a7 == t1 then set_time
+    beq a7, t1, set_time # if a7 == t1 then set_time
     
     li t1, 64 # t1 = 64
-    beq a7, t1, write; # if a7 == t1 then write
+    beq a7, t1, write # if a7 == t1 then write
     
 
 #implementacao syscall 
@@ -85,10 +88,10 @@ escolhe_syscall:
 read_ultrassonic_sensor:
     li a7, 0xFFFF0020
     li a0, 0
+    li t1, 1
     sw a0, 0(a7)
     looplocal:
         lw a0, 0(a7)
-        li t1, 1
         bne t1, a0, looplocal # if t1 != a0 then looplocal
     li a7, 0xFFFF0024 # 
     lw a0, 0(a7) #
@@ -96,18 +99,17 @@ read_ultrassonic_sensor:
 
 #seta os angulos do servo #######################################################checar se deixo a verificacao aqui ou nao
 set_servo_angles:
-    li t1, 1 # t1 = 0
-    li t2, 2 # t2 = 1
-    li t3, 3 # t3 = 2
-    beq t1, a0, setservo0; # if t1 == a0 then setservo0
-    beq t2, a0, setservo1; # if t2 == a0 then setservo1
-    beq t3, a0, setservo2; # if t1 == a0 then setservo2
-    blt a0, t1, wrongid # if a0 < t1 then wrongid
-    bgt a0, t3, wrongid # if a0 > t3 then wrongid
+    li t1, 0 # t1 = 0
+    li t2, 1 # t2 = 1
+    li t3, 2 # t3 = 2
+    beq t1, a0, setservo0  # if t1 == a0 then setservo0
+    beq t2, a0, setservo1  # if t2 == a0 then setservo1
+    beq t3, a0, setservo2  # if t1 == a0 then setservo2
+    j wrongid # pula pro caso invalido
 
     setservo0: #base servo
-        li t1, 0 # t1 = 16
-        li t2, 156 # t2 = 116
+        li t1, 16 # t1 = 16
+        li t2, 116 # t2 = 116
         blt a1, t1, outrange # if a1 < t1 then outrange
         bgt a1, t2, outrange # if a1 > t2 then outrange
         li a0, 0xFFFF001E # 
@@ -116,8 +118,8 @@ set_servo_angles:
         j restaura_contexto
 
     setservo1: #mid servo
-        li t1, 0 # t1 = 52
-        li t2, 156 # t2 = 90
+        li t1, 52 # t1 = 52
+        li t2, 90 # t2 = 90
         blt a1, t1, outrange # if a1 < t1 then outrange
         bgt a1, t2, outrange # if a1 > t2 then outrange
         li a0, 0xFFFF001D # 
@@ -145,35 +147,34 @@ set_servo_angles:
 
 #seta torque dos motores
 set_engine_torque:
-    li t0, -1 # a0 = -1
+    mv t2, a0
     li t1, 1 # t1 = 1
     
-    beq a0, zero, seteng0; # if a0 == zero then seteng0
-    beq a0, t1, seteng1; # if a0 == t1 then seteng1
+    beq t2, zero, seteng0 # if a0 == zero then seteng0
+    beq t2, t1, seteng1 # if a0 == t1 then seteng1
     li a0, -1 # a0 = -1
     j restaura_contexto
 
     seteng0:
-        li a0, 0 # a0 = 0
         li t1, 0xFFFF001A # 
-        sh  a1, 0(t1) # 
+        sh a1, 0(t1) # 
+        li a0, 0 # a0 = 0
         j restaura_contexto
 
     seteng1:
-        li a0, 0 # a0 = 0
         li t1, 0xFFFF0018 # 
         sh a1, 0(t1) # 
+        li a0, 0 # a0 = 0
         j restaura_contexto
 
 #le gps
 read_gps:
     li t1, 0xFFFF0004 # 
     sw zero, 0(t1) # atribui 0 para iniciar leitura do gps
-    
+    li t3, 1 # t3 = 1
     loopgps:
         lw t2, 0(t1) #
-        li t3, 1 # t3 = 1
-        beq t2, t3, gpslido; # if t2 == t3 then gpslido
+        beq t2, t3, gpslido  # if t2 == t3 then gpslido
         j loopgps  # jump to loopgps
 
     gpslido:
@@ -192,11 +193,10 @@ read_gps:
 read_gyroscope:
     li t1, 0xFFFF0004 # 
     sw zero, 0(t1) # atribui 0 para iniciar leitura do giroscopio
-
+    li t3, 1 # t3 = 1
     loopgyro:
         lw t2, 0(t1) #
-        li t3, 1 # t3 = 1
-        beq t2, t3, gyrolido; # if t2 == t3 then gyrolido
+        beq t2, t3, gyrolido  # if t2 == t3 then gyrolido
         j loopgyro  # jump to loopgyro
 
     gyrolido:
@@ -237,13 +237,13 @@ write:
         lb s1, 0(a1) # carrega valor em s1
         sb s1, 0(t1) # coloca valor no endereco de transmissao
         sb t3, 0(t2) # inicia transmissao
-        addi t4, t4, 1; # t4 = t4 + 1
+        addi t4, t4, 1  # t4 = t4 + 1
     
     transmite:
         bnez t2, transmite #enquanto t2 != 0 transmite
     
-    beq t4, a2, fim_transmissao; # if t4 == a2 then fim_transmissao
-    addi a1, a1, 1; # a1 = a1 + 1
+    beq t4, a2, fim_transmissao  # if t4 == a2 then fim_transmissao
+    addi a1, a1, 1  # a1 = a1 + 1
     j inicia
 
     fim_transmissao:
@@ -253,43 +253,80 @@ write:
 
 restaura_contexto:
     
-    csrrw a0, mscratch, a0 # troca valor de a0 com mscratch
-    lw tp, 116(a0) # 
-    lw gp, 112(a0) #
-    lw sp, 108(a0) # 
-    lw ra, 104(a0) # 
-    lw t6, 100(a0) # 
-    lw t5, 96(a0) # 
-    lw t4, 92(a0) # 
-    lw t3, 88(a0) # 
-    lw t2, 84(a0) # 
-    lw t1, 80(a0) # 
-    lw t0, 76(a0) # 
-    lw s11, 72(a0) # 
-    lw s10, 68(a0) # 
-    lw s9, 64(a0) # 
-    lw s8, 60(a0) # 
-    lw s7, 56(a0) # 
-    lw s6, 52(a0) # 
-    lw s5, 48(a0) # 
-    lw s4, 44(a0) # 
-    lw s3, 40(a0) # 
-    lw s2, 36(a0) # 
-    lw s1, 32(a0) # 
-    lw s0, 28(a0) # 
-    lw a7, 24(a0) # 
-    lw a6, 20(a0) # 
-    lw a5, 16(a0) # 
-    lw a4, 12(a0) # 
-    lw a3, 8(a0) # 
-    lw a2, 4(a0) # 
-    lw a1, 0(a0) # 
-    csrrw a0, mscratch, a0 # troca valor de a0 com mscratch
+    csrrw s9, mscratch, s9 # troca valor de a0 com mscratch
+    lw tp, 116(s9) # 
+    lw gp, 112(s9) #
+    lw sp, 108(s9) # 
+    lw ra, 104(s9) # 
+    lw t6, 100(s9) # 
+    lw t5, 96(s9) # 
+    lw t4, 92(s9) # 
+    lw t3, 88(s9) # 
+    lw t2, 84(s9) # 
+    lw t1, 80(s9) # 
+    lw t0, 76(s9) # 
+    lw s11, 72(s9) # 
+    lw s10, 68(s9) # 
+    lw a0, 64(s9) # 
+    lw s8, 60(s9) # 
+    lw s7, 56(s9) # 
+    lw s6, 52(s9) # 
+    lw s5, 48(s9) # 
+    lw s4, 44(s9) # 
+    lw s3, 40(s9) # 
+    lw s2, 36(s9) # 
+    lw s1, 32(s9) # 
+    lw s0, 28(s9) # 
+    lw a7, 24(s9) # 
+    lw a6, 20(s9) # 
+    lw a5, 16(s9) # 
+    lw a4, 12(s9) # 
+    lw a3, 8(s9) # 
+    lw a2, 4(s9) # 
+    lw a1, 0(s9) # 
+    addi s9, s9, -120
+    csrrw s9, mscratch, s9 # troca valor de a0 com mscratch
     csrr a1, mepc 
     addi a1, a1, 4
     csrw mepc, a1
     mret
 
+restaura_contexto_gpt:
+    
+    csrrw s9, mscratch, s9 # troca valor de a0 com mscratch
+    lw tp, 116(s9) # 
+    lw gp, 112(s9) #
+    lw sp, 108(s9) # 
+    lw ra, 104(s9) # 
+    lw t6, 100(s9) # 
+    lw t5, 96(s9) # 
+    lw t4, 92(s9) # 
+    lw t3, 88(s9) # 
+    lw t2, 84(s9) # 
+    lw t1, 80(s9) # 
+    lw t0, 76(s9) # 
+    lw s11, 72(s9) # 
+    lw s10, 68(s9) # 
+    lw a0, 64(s9) # 
+    lw s8, 60(s9) # 
+    lw s7, 56(s9) # 
+    lw s6, 52(s9) # 
+    lw s5, 48(s9) # 
+    lw s4, 44(s9) # 
+    lw s3, 40(s9) # 
+    lw s2, 36(s9) # 
+    lw s1, 32(s9) # 
+    lw s0, 28(s9) # 
+    lw a7, 24(s9) # 
+    lw a6, 20(s9) # 
+    lw a5, 16(s9) # 
+    lw a4, 12(s9) # 
+    lw a3, 8(s9) # 
+    lw a2, 4(s9) # 
+    lw a1, 0(s9) # 
+    addi s9, s9, -120
+    csrrw s9, mscratch, s9 # troca valor de a0 com mscratch
+    mret
 
 _start:
     # Setta os valores iniciais do uoli
@@ -317,7 +354,7 @@ _start:
     la t4, tempo # 
     sw zero, 0(t4) # 
     li t1, 0xFFFF0100 # t1 = 0xFFFF0100 guarda valor para gerar interrupcao
-    li t2, 100 # t2 = 100
+    li t2, 0 # t2 = 100
     sw t2, 0(t1) # guarda 100 no t1
     li t3, 0xFFFF0104 # t3 = 0xFFFF0104
     sw zero, 0(t3) # zera o registrador q indica uma interrupcao
@@ -348,9 +385,10 @@ _start:
     csrw mstatus, t1
     la t0, user # Grava o endereço do rótulo user
     csrw mepc, t0 # no registrador mepc
-    mret # PC <= MEPC; MIE <= MPIE; Muda modo para MPP
+    mret # PC <= MEPC  MIE <= MPIE  Muda modo para MPP
 
-tempo: .skip 4
+tempo: 
+    .skip 4
 .align 4
 
 reg_buffer:
